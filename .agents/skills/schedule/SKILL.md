@@ -16,6 +16,14 @@ lavish doc *before* anything touches the calendar.
    - `TODO.md` (read-only — never edit it)
    - Carry-overs from yesterday's `## Review`
    - Anything the captain names when invoking
+   - **Unanswered texts:** `bliss imessage unanswered --days 7` (laptop-only;
+     reads the local Messages DB, newest message per thread only, never
+     sends). For each thread that looks like a real person waiting
+     (`ever_replied: true` is the strong signal; skip obvious
+     marketing/OTP/reply-STOP noise), either nudge the captain to respond --
+     he answers his own texts -- or, if the message contains a task or
+     commitment, add it as a schedule candidate. Also cross-check
+     appointment-reminder texts against the calendar for conflicts.
 2. Get the real free space: `bliss sync` if stale, then
    `bliss calendar upcoming` for existing meetings on the target day. Blocks
    must fit around them.
