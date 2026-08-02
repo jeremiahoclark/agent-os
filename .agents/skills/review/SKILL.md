@@ -1,6 +1,6 @@
 ---
 name: review
-description: End-of-day review of the morning brief and schedule. Use when the captain invokes /review, says "let's review the day", "wrapping up", or "end of day". Builds an interactive lavish doc to reconcile brief items (done / not / carried), capture non-coding work done, collect actual time spent vs estimates and schedule adherence, then updates the daily note and appends to the Time Performance Log.
+description: End-of-day review of the morning brief and schedule. Use when the owner invokes /review, says "let's review the day", "wrapping up", or "end of day". Builds an interactive lavish doc to reconcile brief items (done / not / carried), capture non-coding work done, collect actual time spent vs estimates and schedule adherence, then updates the daily note and appends to the Time Performance Log.
 user-invocable: true
 ---
 
@@ -21,7 +21,7 @@ estimates better.
 2. Build an interactive review doc with lavish (load the `lavish` skill; use
    the **input** playbook, plus **table**). Put it in
    `~/dev/_agentOS/.lavish/daily-review-<MM-DD-YY>.html`. The doc must let
-   the captain, per brief item: mark done / not done / carry to tomorrow /
+   the owner, per brief item: mark done / not done / carry to tomorrow /
    drop; enter **actual minutes** next to the shown estimate; and at the
    bottom: free-entry rows to add things done outside coding work, a
    schedule-adherence question (which planned blocks actually happened), and
@@ -29,7 +29,7 @@ estimates better.
    feedback.
 3. On feedback, write results back:
    - **Daily note:** check off completed items; append a `## Review — <h:mm A> EDT`
-     section: what got done (including the captain's added non-coding items),
+     section: what got done (including the owner's added non-coding items),
      what carries to tomorrow, schedule adherence (X of Y planned blocks
      held, with a one-line why for misses), decisions worth remembering. Add
      one Index line for the headline outcome.

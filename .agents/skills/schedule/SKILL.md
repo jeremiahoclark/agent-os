@@ -1,6 +1,6 @@
 ---
 name: schedule
-description: Plan the day onto the captain's personal Google Calendar. Use when the captain invokes /schedule, asks to "schedule my day", "block time", or "plan today/tomorrow". Collects todos (brief schedule-candidates, TODO.md, captain input), proposes priorities and calibrated time estimates, aligns via an interactive lavish doc, then creates the agreed blocks with bliss calendar create.
+description: Plan the day onto the owner's personal Google Calendar. Use when the owner invokes /schedule, asks to "schedule my day", "block time", or "plan today/tomorrow". Collects todos (brief schedule-candidates, TODO.md, owner input), proposes priorities and calibrated time estimates, aligns via an interactive lavish doc, then creates the agreed blocks with bliss calendar create.
 user-invocable: true
 ---
 
@@ -15,12 +15,12 @@ lavish doc *before* anything touches the calendar.
    - Schedule-quadrant items from the brief / `bliss actions --quadrant important --quadrant urgent_important`
    - `TODO.md` (read-only — never edit it)
    - Carry-overs from yesterday's `## Review`
-   - Anything the captain names when invoking
+   - Anything the owner names when invoking
    - **Unanswered texts:** `bliss imessage unanswered --days 7` (laptop-only;
      reads the local Messages DB, newest message per thread only, never
      sends). For each thread that looks like a real person waiting
      (`ever_replied: true` is the strong signal; skip obvious
-     marketing/OTP/reply-STOP noise), either nudge the captain to respond --
+     marketing/OTP/reply-STOP noise), either nudge the owner to respond --
      he answers his own texts -- or, if the message contains a task or
      commitment, add it as a schedule candidate. Also cross-check
      appointment-reminder texts against the calendar for conflicts.
@@ -45,7 +45,7 @@ lavish doc *before* anything touches the calendar.
    ```
 
    Self-only holds need no approval. Anything with `--attendees` (a real
-   invite to another person) needs explicit captain sign-off per event, and
+   invite to another person) needs explicit owner sign-off per event, and
    `--send-updates all` so invites actually send. Work-domain meetings go on
    the matching work account instead of the personal one.
 6. Report the created blocks (times + event links) in chat and note the plan
