@@ -1,0 +1,7 @@
+{
+  "env": {
+    "AOS_HOME": "__AOS_HOME__",
+    "AOS_PROJECTS_OVERRIDE": "__AOS_PROJECTS__",
+    "AOS_ROOT_OVERRIDE": "__AOS_ENGINE__"
+  }
+}

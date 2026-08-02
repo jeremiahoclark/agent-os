@@ -5,7 +5,8 @@ Each file also starts with a short header comment.
 
 | Script                   | Description                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `aos-bootstrap.sh`        | Detect required toolchain and version problems, optional capability facts, primary-checkout `TANGLE:` problems, and actionable clone refresh outcomes; refresh project clones best-effort; locally sync live secondary-subagent homes; set up opt-in X mode; install tools only after consent |
+| `aos-bootstrap.sh`        | Detect required toolchain and version problems, optional capability facts, `SETUP_REQUIRED`, primary-checkout `TANGLE:` problems, and actionable clone refresh outcomes; refresh project clones best-effort; locally sync live secondary-subagent homes; set up opt-in X mode; install tools only after consent |
+| `aos-init-home.sh`        | Copy `templates/home` to a new personal home, wire absolute `AOS_HOME` / projects / engine paths, and arm `config/setup-pending` |
 | `aos-fleet-sync.sh`       | Fetch clones, fast-forward safe default-branch states, self-heal clean detached ancestor drift, report unsafe drift as `STUCK:`, and safely prune branches whose remote is gone |
 | `aos-update.sh`           | Self-update the running maestro repo and registered secondary-subagent homes with fast-forward-only pulls from origin     |
 | `aos-backlog-handoff.sh`  | Move already-judged in-scope queued backlog items from the main home into a seeded secondary-subagent home                 |

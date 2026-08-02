@@ -54,7 +54,14 @@ Maestro detects and offers to install everything else.
 ```sh
 gh auth login
 git clone https://github.com/jeremiahoclark/agent-os
-cd agent-os && claude   # launch your harness here; AGENTS.md takes over
+cd agent-os
+
+# Option A: use the engine checkout itself as the home
+claude   # SETUP_REQUIRED → /setup on first launch
+
+# Option B: create a separate personal home (vault-friendly)
+bin/aos-init-home.sh ~/agentOS-home
+cd ~/agentOS-home && claude
 ```
 
 On first launch, maestro runs setup: your name, how to address you, where projects live, which repos to add, and any secondary-subagents you want. After that it just works from saved settings.
