@@ -339,7 +339,7 @@ test_bootstrap_activates_on_env_token() {
   home="$TMP_ROOT/boot-on"; mkdir -p "$home"
   printf 'AOSX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
   out=$(AOS_HOME="$home" "$ROOT/bin/aos-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode on" "bootstrap must announce X mode"
+  assert_contains "$out" "AOSX: X mode on" "bootstrap must announce X mode"
   assert_present "$home/state/x-watch.check.sh" "bootstrap must drop the check shim"
   [ -x "$home/state/x-watch.check.sh" ] || fail "the check shim must be executable"
   assert_grep "aos-x-poll.sh" "$home/state/x-watch.check.sh" "the shim must exec the poll script"
@@ -392,7 +392,7 @@ SH
   out=$(PATH="$fakebin" AOS_HOME="$home" AOS_ROOT_OVERRIDE="$home" \
     "$BASH" "$ROOT/bin/aos-bootstrap.sh" 2>/dev/null)
   assert_contains "$out" "MISSING: jq" "bootstrap must report missing jq when X mode is opted in"
-  assert_not_contains "$out" "FMX: X mode on" "bootstrap must not announce X mode when a dependency is missing"
+  assert_not_contains "$out" "AOSX: X mode on" "bootstrap must not announce X mode when a dependency is missing"
   assert_absent "$home/state/x-watch.check.sh" "missing jq must not arm the check shim"
   assert_absent "$home/config/x-mode.env" "missing jq must not write the cadence config"
   pass "bootstrap reports missing X-mode dependencies before arming"
@@ -404,9 +404,9 @@ test_bootstrap_does_not_announce_when_arm_fails() {
   printf 'AOSX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
   printf '%s\n' 'not a directory' > "$home/config"
   out=$(AOS_HOME="$home" AOS_CONFIG_OVERRIDE="$home/config" "$ROOT/bin/aos-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off - failed to arm relay poll shim or 30s cadence" \
+  assert_contains "$out" "AOSX: X mode off - failed to arm relay poll shim or 30s cadence" \
     "bootstrap must report a failed X-mode activation"
-  assert_not_contains "$out" "FMX: X mode on" \
+  assert_not_contains "$out" "AOSX: X mode on" \
     "bootstrap must not announce X mode when the shim or cadence was not armed"
   assert_absent "$home/state/x-watch.check.sh" "failed X-mode activation must not leave an armed shim"
   pass "bootstrap does not report X mode on when activation artifacts cannot be written"
@@ -499,7 +499,7 @@ test_bootstrap_opt_out_cleanup() {
   # Opt out: empty the token, re-run bootstrap -> artifacts removed + one off line.
   printf 'AOSX_PAIRING_TOKEN=\n' > "$home/.env"
   out=$(AOS_HOME="$home" "$ROOT/bin/aos-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off" "opt-out must announce X mode off when it removed artifacts"
+  assert_contains "$out" "AOSX: X mode off" "opt-out must announce X mode off when it removed artifacts"
   assert_absent "$home/state/x-watch.check.sh" "opt-out must remove the shim"
   assert_absent "$home/config/x-mode.env" "opt-out must remove the cadence config"
   # Steady-state off: another run with nothing to remove is silent.
@@ -523,7 +523,7 @@ SH
   chmod +x "$fakebin/rm"
   printf 'AOSX_PAIRING_TOKEN=\n' > "$home/.env"
   out=$(PATH="$fakebin:$PATH" AOS_HOME="$home" "$ROOT/bin/aos-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off - failed to remove relay poll shim or 30s cadence" \
+  assert_contains "$out" "AOSX: X mode off - failed to remove relay poll shim or 30s cadence" \
     "opt-out cleanup failure must be reported"
   assert_present "$home/state/x-watch.check.sh" "failed opt-out cleanup must leave the stale shim visible"
   assert_present "$home/config/x-mode.env" "failed opt-out cleanup must leave the stale cadence visible"

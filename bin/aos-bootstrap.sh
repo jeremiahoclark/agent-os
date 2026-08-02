@@ -4,12 +4,13 @@
 #          Detect: prints one line per problem or capability fact and exits 0.
 #          Silent = all good.
 #          Lines: "MISSING: <tool> (install: <command>)", "NEEDS_GH_AUTH",
-#                 "CREW_HARNESS_OVERRIDE: <name>",
+#                 "SETUP_REQUIRED",
+#                 "SUBAGENT_HARNESS_OVERRIDE: <name>",
 #                 "FLEET_SYNC: <repo>: skipped|recovered|STUCK: <detail>",
 #                 "TASKS_AXI: available", "TANGLE: <remediation>",
 #                 "SECONDARY_SUBAGENT_SYNC: secondary_subagent <id>: skipped: <reason>",
 #                 "NUDGE_SECONDARY_SUBAGENTS: <window-targets...>",
-#                 "FMX: X mode on ..." or "FMX: X mode off ...".
+#                 "AOSX: X mode on ..." or "AOSX: X mode off ...".
 #          A NUDGE_SECONDARY_SUBAGENTS line lists the RUNNING secondary_subagent windows whose
 #          worktree was fast-forwarded to maestro's own current default-branch
 #          commit (a purely LOCAL fast-forward, never an origin fetch) AND whose
@@ -29,7 +30,7 @@
 #          line and never prompts an install.
 #          X mode is OPTIONAL and inert unless AOS_HOME/.env has a non-empty
 #          AOSX_PAIRING_TOKEN. When opted in, bootstrap requires curl+jq, writes
-#          the relay poll shim and 30s cadence config, and prints an FMX line.
+#          the relay poll shim and 30s cadence config, and prints an AOSX line.
 #          Fleet sync fetches, fast-forwards safe default-branch states, reports
 #          recovered and STUCK clone drift, and prunes gone local branches; it is
 #          bounded by AOS_FLEET_SYNC_BOOTSTRAP_TIMEOUT, default 20s.
@@ -208,9 +209,9 @@ x_mode_setup() {
     # actually removed something.
     if [ -e "$shim" ] || [ -e "$cadence" ]; then
       if x_mode_remove_artifacts; then
-        echo "FMX: X mode off - removed relay poll shim and 30s cadence; restart the watcher (bin/aos-watch-arm.sh --restart) to drop back to the default cadence"
+        echo "AOSX: X mode off - removed relay poll shim and 30s cadence; restart the watcher (bin/aos-watch-arm.sh --restart) to drop back to the default cadence"
       else
-        echo "FMX: X mode off - failed to remove relay poll shim or 30s cadence"
+        echo "AOSX: X mode off - failed to remove relay poll shim or 30s cadence"
       fi
     fi
     return 0
@@ -226,9 +227,9 @@ x_mode_setup() {
   if [ "$missing" -ne 0 ]; then
     if [ -e "$shim" ] || [ -e "$cadence" ]; then
       if x_mode_remove_artifacts; then
-        echo "FMX: X mode off - missing relay poll dependencies; install them and rerun bootstrap"
+        echo "AOSX: X mode off - missing relay poll dependencies; install them and rerun bootstrap"
       else
-        echo "FMX: X mode off - failed to remove relay poll shim or 30s cadence after missing relay poll dependencies"
+        echo "AOSX: X mode off - failed to remove relay poll shim or 30s cadence after missing relay poll dependencies"
       fi
     fi
     return 0
@@ -236,9 +237,9 @@ x_mode_setup() {
 
   fmx_arm_failed() {
     if x_mode_remove_artifacts; then
-      echo "FMX: X mode off - failed to arm relay poll shim or 30s cadence"
+      echo "AOSX: X mode off - failed to arm relay poll shim or 30s cadence"
     else
-      echo "FMX: X mode off - failed to arm relay poll shim or 30s cadence; stale artifacts remain"
+      echo "AOSX: X mode off - failed to arm relay poll shim or 30s cadence; stale artifacts remain"
     fi
   }
 
@@ -265,7 +266,7 @@ EOF
 )
   write_if_changed "$cadence" "$cadence_body" || { fmx_arm_failed; return 0; }
 
-  echo "FMX: X mode on - relay poll armed via state/x-watch.check.sh; 30s watcher cadence in config/x-mode.env"
+  echo "AOSX: X mode on - relay poll armed via state/x-watch.check.sh; 30s watcher cadence in config/x-mode.env"
 }
 
 if [ "${1:-}" = "install" ]; then
@@ -278,6 +279,12 @@ if [ "${1:-}" = "install" ]; then
     eval "$cmd"
   done
   exit 0
+fi
+
+DATA="${AOS_DATA_OVERRIDE:-$AOS_HOME/data}"
+# First-run / re-setup gate. Maestro must run /setup before fleet work.
+if [ -f "$CONFIG/setup-pending" ] || [ ! -f "$DATA/owner.md" ]; then
+  echo "SETUP_REQUIRED"
 fi
 
 for t in $TOOLS; do
@@ -298,9 +305,9 @@ if [ -n "$tangle_branch" ]; then
   tangle_default=$(fm_default_branch "$AOS_ROOT" 2>/dev/null || echo main)
   echo "TANGLE: primary checkout on feature branch '$tangle_branch' (expected '$tangle_default'); the work is safe on that ref - restore the primary with: git -C $AOS_ROOT checkout $tangle_default, then re-validate the branch in a proper worktree"
 fi
-crew=
-[ -f "$CONFIG/subagent-harness" ] && crew=$(tr -d '[:space:]' < "$CONFIG/subagent-harness" || true)
-[ -n "$crew" ] && [ "$crew" != "default" ] && echo "CREW_HARNESS_OVERRIDE: $crew"
+harness=
+[ -f "$CONFIG/subagent-harness" ] && harness=$(tr -d '[:space:]' < "$CONFIG/subagent-harness" || true)
+[ -n "$harness" ] && [ "$harness" != "default" ] && echo "SUBAGENT_HARNESS_OVERRIDE: $harness"
 fm_tasks_axi_compatible && echo "TASKS_AXI: available"
 secondary_subagent_sync
 x_mode_setup

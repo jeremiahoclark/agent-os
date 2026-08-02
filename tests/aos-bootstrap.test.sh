@@ -78,7 +78,9 @@ test_bootstrap_reporting() {
     [ -n "$label" ] || continue
     n=$((n + 1))
     case_dir="$TMP_ROOT/case-$n"
-    mkdir -p "$case_dir/home"
+    mkdir -p "$case_dir/home/data"
+    # Seed owner.md so tool-detection cases stay silent unless they intentionally test setup.
+    printf '# Owner\n\n- name: test\n- address_as: test\n' > "$case_dir/home/data/owner.md"
     fakebin=$(make_fake_toolchain "$case_dir")
     [ "$tasks" = "-" ] || add_tasks_axi "$fakebin" "$tasks"
     # AOS_ROOT_OVERRIDE points the worktree-tangle check at the non-git home dir so
@@ -115,7 +117,8 @@ test_no_mistakes_min_version() {
     [ -n "$label" ] || continue
     n=$((n + 1))
     case_dir="$TMP_ROOT/no-mistakes-$n"
-    mkdir -p "$case_dir/home"
+    mkdir -p "$case_dir/home/data"
+    printf '# Owner\n\n- name: test\n- address_as: test\n' > "$case_dir/home/data/owner.md"
     fakebin=$(make_fake_toolchain "$case_dir")
     out=$(PATH="$fakebin:$BASE_PATH" AOS_HOME="$case_dir/home" AOS_ROOT_OVERRIDE="$case_dir/home" \
       AOS_FAKE_TREEHOUSE_LEASE_HELP=1 AOS_FAKE_NO_MISTAKES_VERSION="$version" "$ROOT/bin/aos-bootstrap.sh")
@@ -135,5 +138,33 @@ ROWS
   pass "bootstrap enforces no-mistakes minimum version"
 }
 
+test_setup_required_gate() {
+  local case_dir fakebin out
+  case_dir="$TMP_ROOT/setup-required"
+  mkdir -p "$case_dir/home"
+  fakebin=$(make_fake_toolchain "$case_dir")
+  out=$(PATH="$fakebin:$BASE_PATH" AOS_HOME="$case_dir/home" AOS_ROOT_OVERRIDE="$case_dir/home" \
+    AOS_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/aos-bootstrap.sh")
+  printf '%s\n' "$out" | grep -Fx 'SETUP_REQUIRED' >/dev/null \
+    || fail "missing owner.md must print SETUP_REQUIRED (got: $out)"
+
+  mkdir -p "$case_dir/home/data"
+  printf '# Owner\n\n- name: test\n- address_as: test\n' > "$case_dir/home/data/owner.md"
+  out=$(PATH="$fakebin:$BASE_PATH" AOS_HOME="$case_dir/home" AOS_ROOT_OVERRIDE="$case_dir/home" \
+    AOS_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/aos-bootstrap.sh")
+  printf '%s\n' "$out" | grep -Fx 'SETUP_REQUIRED' >/dev/null \
+    && fail "configured owner.md must not print SETUP_REQUIRED (got: $out)"
+
+  mkdir -p "$case_dir/home/config"
+  date '+%s' > "$case_dir/home/config/setup-pending"
+  out=$(PATH="$fakebin:$BASE_PATH" AOS_HOME="$case_dir/home" AOS_ROOT_OVERRIDE="$case_dir/home" \
+    AOS_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/aos-bootstrap.sh")
+  printf '%s\n' "$out" | grep -Fx 'SETUP_REQUIRED' >/dev/null \
+    || fail "setup-pending must print SETUP_REQUIRED even with owner.md (got: $out)"
+
+  pass "bootstrap SETUP_REQUIRED gate honors missing owner.md and setup-pending"
+}
+
 test_bootstrap_reporting
 test_no_mistakes_min_version
+test_setup_required_gate

@@ -118,12 +118,13 @@ The sweep reports the `NUDGE_SECONDARY_SUBAGENTS:` line below only when a runnin
 Silence means all good: say nothing and move on.
 Otherwise it prints one line per problem or capability fact; handle each:
 
+- `SETUP_REQUIRED` - `config/setup-pending` exists or `data/owner.md` is missing. Load `/setup` immediately, finish owner/projects/secondary-subagent onboarding, disarm `config/setup-pending`, then stop. Do not dispatch fleet work until setup completes.
 - `MISSING: <tool> (install: <command>)` - list the missing tools to the owner with a one-line purpose each plus the printed install commands, wait for consent (one approval may cover the list), then run `bin/aos-bootstrap.sh install <approved tools...>`.
   For `treehouse`, this also covers an installed version whose `treehouse get` lacks `--lease`; treat it as an upgrade request.
   For `no-mistakes`, this also covers an installed version older than 1.31.2, because subagent validation briefs delegate gate mechanics to no-mistakes' version-matched guidance.
 - `NEEDS_GH_AUTH` - ask the owner to run `! gh auth login` (interactive; you cannot run it for them).
 - `TANGLE: <remediation>` - the maestro primary checkout (the repo root, `AOS_ROOT`) is stranded on a feature branch instead of its default branch: a subagent working maestro-on-itself branched/committed in the primary instead of its own isolated worktree (section 8). The work is safe on that branch ref; restore the primary to its default branch with the printed `git -C <root> checkout <default>`, then re-validate that branch in a proper worktree. This is the only sanctioned maestro-initiated git write to the primary, and it is a non-destructive branch switch that strands nothing.
-- `CREW_HARNESS_OVERRIDE: <name>` - record and use the override silently; surface a harness fact only if it actually blocks work or the owner asks.
+- `SUBAGENT_HARNESS_OVERRIDE: <name>` - record and use the override silently; surface a harness fact only if it actually blocks work or the owner asks.
 - `FLEET_SYNC: <repo>: skipped: <reason>` - a benign one-off skip (offline, no origin, local-only); bootstrap continued, investigate only if it blocks work.
 - `FLEET_SYNC: <repo>: recovered: <detail>` - the clone had drifted onto a clean detached HEAD holding no unique commits and the sync self-healed it (re-attached the default branch and fast-forwarded); no action needed, it is reported only so the self-heal is visible.
 - `FLEET_SYNC: <repo>: STUCK: on <state>, N commits behind <base> - needs attention` - the clone is dirty, on a non-default branch, detached with unique commits, or diverged, so the sync left it untouched (never forcing or discarding); it will keep falling behind until you look. A loud STUCK, especially a growing N across bootstraps, means that clone needs hands-on attention; dispatch a subagent or resolve it before it strands work.
@@ -133,16 +134,15 @@ Otherwise it prints one line per problem or capability fact; handle each:
 - `NUDGE_SECONDARY_SUBAGENTS: <window-targets...>` - the secondary-subagent sweep fast-forwarded one or more *running* secondary-subagent homes to maestro's current version and their instructions actually changed; for each listed window, send a one-line re-read nudge with `bin/aos-send.sh <window-target> 'maestro was updated to the latest - please re-read your AGENTS.md to pick up the new instructions.'` so that secondary-subagent picks up its new instructions.
   This mirrors `/update-agentos`'s `nudge-secondary-subagents:` report: it is a gentle steer, never an interruption, and the fast-forward already landed safely.
   A secondary-subagent that was skipped, already current, or whose advance changed no instructions is not listed and must not be disturbed.
-- `FMX: X mode on ...` / `FMX: X mode off ...` - bootstrap confirmed or removed the local X-mode poll artifacts; follow section 14 for watcher cadence restart only when a running watcher needs the transition applied immediately.
+- `AOSX: X mode on ...` / `AOSX: X mode off ...` - bootstrap confirmed or removed the local X-mode poll artifacts; follow section 14 for watcher cadence restart only when a running watcher needs the transition applied immediately.
 
 Bootstrap's fleet refresh is bounded by `AOS_FLEET_SYNC_BOOTSTRAP_TIMEOUT` seconds, default 20; a timeout is reported as a `FLEET_SYNC` skip and does not block startup.
 
+If bootstrap printed `SETUP_REQUIRED`, run `/setup` now and do not continue past setup in this turn.
+Otherwise read `data/owner.md` first (canonical owner identity and address). Treat harness memory of these preferences as a recall cache only.
 Then read `data/projects.md`, the fleet registry, to load what each project is.
-If it is missing or disagrees with what is actually under `projects/`, rebuild it from the clones (a README skim per project is enough) before taking on work.
+If it is missing or disagrees with what is actually under `projects/`, ask the owner which projects to register and where they live; do not invent a registry by scanning.
 Then read `data/secondary_subagents.md` if present so intake can route work by registered secondary-subagent scope (section 7).
-Then read `data/owner.md` if present, to load this owner's curated preferences and working style.
-If it is absent, use this template's defaults with no special preferences.
-Treat any harness memory of these preferences as a recall cache only; `data/owner.md` is the canonical, harness-portable home.
 
 Do not dispatch any work until the tools that work needs are present and GitHub auth is good.
 Use `gh-axi` for all GitHub operations, `chrome-devtools-axi` for all browser operations, and `lavish-axi` when a decision or report is complex enough to deserve a rich review surface.
@@ -654,7 +654,10 @@ The status-reporting protocol is intentionally sparse: subagents append status o
 For any generated brief that still contains `{TASK}`, replace it with a clear task description, acceptance criteria, and any constraints or context the subagent needs before spawning or seeding.
 Adjust the other sections only when the task genuinely deviates from the standard ship-a-new-PR shape (e.g. fixing an existing external PR); the scaffold is the contract, not a suggestion.
 
-## 12. Self-update
+## 12. Setup and self-update
+
+When bootstrap prints `SETUP_REQUIRED`, or the owner invokes `/setup`, load the `/setup` skill.
+It asks for identity, project locations, and optional secondary-subagents; writes `data/owner.md` and related registries; then removes `config/setup-pending` so later sessions do not re-ask.
 
 maestro is its own repo behind the no-mistakes gate, so improvements to `AGENTS.md`, `bin/`, and skills reach `main` and then wait for each running maestro to pull them.
 When the owner invokes `/update-agentos` or asks to update maestro, load the `/update-agentos` skill.

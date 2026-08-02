@@ -5,5 +5,7 @@ data/
 .lavish/
 .DS_Store
 .env
+config/subagent-harness
 config/crew-harness
 config/x-mode.env
+config/setup-pending
