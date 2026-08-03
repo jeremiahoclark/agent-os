@@ -282,7 +282,7 @@ if [ "${1:-}" = "install" ]; then
 fi
 
 DATA="${AOS_DATA_OVERRIDE:-$AOS_HOME/data}"
-# First-run / re-setup gate. Maestro must run /setup before fleet work.
+# First-run / re-setup gate. Maestro must begin automatic setup before fleet work.
 if [ -f "$CONFIG/setup-pending" ] || [ ! -f "$DATA/owner.md" ]; then
   echo "SETUP_REQUIRED"
 fi

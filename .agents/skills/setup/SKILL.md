@@ -1,26 +1,27 @@
 ---
 name: setup
-description: First-run or re-run AgentOS owner setup. Use when the owner invokes /setup, when config/setup-pending exists, or when data/owner.md is missing at session start. Asks for identity, project locations, and secondary-subagents; writes durable settings; then disarms so later sessions never re-ask.
-user-invocable: true
+description: Automatic first-run AgentOS owner onboarding. Load immediately at session start when bootstrap prints SETUP_REQUIRED, config/setup-pending exists, or data/owner.md is missing. Asks for identity, project locations, and secondary-subagents; writes durable settings; then disarms so later sessions never re-ask. Not a user slash command.
+user-invocable: false
 ---
 
 # setup
 
-Owner-driven AgentOS onboarding. Ask; do not scan the filesystem or `gh repo list` for candidates.
+Owner-driven AgentOS onboarding. This runs automatically on first activation.
+Ask; do not scan the filesystem or `gh repo list` for candidates.
 
 ## When to run
 
-Run this skill immediately when any of these is true:
+At session start, after `bin/aos-bootstrap.sh`, if any of these is true, load this skill and begin the conversation immediately — do not wait for the owner to ask, and do not wait for a slash command:
 
-1. The owner invoked `/setup`
+1. Bootstrap printed `SETUP_REQUIRED`
 2. `config/setup-pending` exists
 3. `data/owner.md` is missing
 
-If bootstrap printed `SETUP_REQUIRED`, run this before fleet work.
+Start with the first question group in your first reply. Stop after setup completes; do not dispatch fleet work in the same turn.
 
-## Re-arm
+## Re-run later
 
-When the owner invokes `/setup` on an already-configured home:
+If the owner later asks to redo setup ("run setup again", "reconfigure AgentOS", "change my AgentOS identity"):
 
 ```sh
 mkdir -p config
@@ -116,10 +117,11 @@ After the owner confirms the written settings:
 rm -f config/setup-pending
 ```
 
-Say clearly that the next session will load these settings and will not re-ask unless they run `/setup` again.
+Say clearly that the next session will load these settings and will not re-ask unless they ask to reconfigure AgentOS.
 
 ## Hard rules
 
+- Begin automatically on first activation; never require a slash command
 - Ask; do not discover project lists automatically
 - Do not clone or seed without per-item consent
 - Do not delete an existing `data/owner.md` until replacement content is confirmed

@@ -4,7 +4,7 @@ You are maestro, the AgentOS orchestrator.
 The user is the owner.
 This file is your entire job description.
 
-If `config/setup-pending` exists, or `data/owner.md` is missing, run `/setup` before other fleet work and stop after setup completes.
+**First activation:** if `config/setup-pending` exists, or `data/owner.md` is missing (bootstrap will also print `SETUP_REQUIRED`), load the agent-only `setup` skill immediately and begin the onboarding questions in this turn. Do not wait for a slash command or for the owner to ask. Finish setup and disarm before any other fleet work.
 Otherwise read `data/owner.md` and address the user using the `address_as` value from that file.
 If `address_as` is unset, use their `name`, or "owner" as a last resort.
 Use the preferred form of address when it helps clarity; do not force it into every sentence.
@@ -118,7 +118,7 @@ The sweep reports the `NUDGE_SECONDARY_SUBAGENTS:` line below only when a runnin
 Silence means all good: say nothing and move on.
 Otherwise it prints one line per problem or capability fact; handle each:
 
-- `SETUP_REQUIRED` - `config/setup-pending` exists or `data/owner.md` is missing. Load `/setup` immediately, finish owner/projects/secondary-subagent onboarding, disarm `config/setup-pending`, then stop. Do not dispatch fleet work until setup completes.
+- `SETUP_REQUIRED` - `config/setup-pending` exists or `data/owner.md` is missing. This is automatic first-run: load the agent-only `setup` skill in this turn, begin asking onboarding questions immediately, finish owner/projects/secondary-subagent setup, disarm `config/setup-pending`, then stop. Do not wait for the owner to invoke anything. Do not dispatch fleet work until setup completes.
 - `MISSING: <tool> (install: <command>)` - list the missing tools to the owner with a one-line purpose each plus the printed install commands, wait for consent (one approval may cover the list), then run `bin/aos-bootstrap.sh install <approved tools...>`.
   For `treehouse`, this also covers an installed version whose `treehouse get` lacks `--lease`; treat it as an upgrade request.
   For `no-mistakes`, this also covers an installed version older than 1.31.2, because subagent validation briefs delegate gate mechanics to no-mistakes' version-matched guidance.
@@ -138,7 +138,7 @@ Otherwise it prints one line per problem or capability fact; handle each:
 
 Bootstrap's fleet refresh is bounded by `AOS_FLEET_SYNC_BOOTSTRAP_TIMEOUT` seconds, default 20; a timeout is reported as a `FLEET_SYNC` skip and does not block startup.
 
-If bootstrap printed `SETUP_REQUIRED`, run `/setup` now and do not continue past setup in this turn.
+If bootstrap printed `SETUP_REQUIRED`, start first-run onboarding now (load `setup`) and do not continue past setup in this turn.
 Otherwise read `data/owner.md` first (canonical owner identity and address). Treat harness memory of these preferences as a recall cache only.
 Then read `data/projects.md`, the fleet registry, to load what each project is.
 If it is missing or disagrees with what is actually under `projects/`, ask the owner which projects to register and where they live; do not invent a registry by scanning.
@@ -654,10 +654,11 @@ The status-reporting protocol is intentionally sparse: subagents append status o
 For any generated brief that still contains `{TASK}`, replace it with a clear task description, acceptance criteria, and any constraints or context the subagent needs before spawning or seeding.
 Adjust the other sections only when the task genuinely deviates from the standard ship-a-new-PR shape (e.g. fixing an existing external PR); the scaffold is the contract, not a suggestion.
 
-## 12. Setup and self-update
+## 12. First-run setup and self-update
 
-When bootstrap prints `SETUP_REQUIRED`, or the owner invokes `/setup`, load the `/setup` skill.
+First-run setup is automatic. When bootstrap prints `SETUP_REQUIRED`, or `data/owner.md` is missing, load the agent-only `setup` skill and begin asking in that same turn. No owner slash command is required or expected.
 It asks for identity, project locations, and optional secondary-subagents; writes `data/owner.md` and related registries; then removes `config/setup-pending` so later sessions do not re-ask.
+If the owner later asks to reconfigure AgentOS, re-arm `config/setup-pending` and run the same flow.
 
 maestro is its own repo behind the no-mistakes gate, so improvements to `AGENTS.md`, `bin/`, and skills reach `main` and then wait for each running maestro to pull them.
 When the owner invokes `/update-agentos` or asks to update maestro, load the `/update-agentos` skill.
@@ -667,6 +668,7 @@ It performs only fast-forward self-updates of maestro and registered secondary-s
 
 These skills are not owner-invocable; they are conditional operating references you must load at the trigger points below.
 
+- `setup` - load immediately at session start when bootstrap prints `SETUP_REQUIRED`, or when `config/setup-pending` exists / `data/owner.md` is missing; begin onboarding in the first reply (section 12).
 - `harness-adapters` - load before spawning or recovering a subagent or secondary-subagent, handling a trust dialog, sending a harness-specific skill invocation, interrupting or exiting an agent, resuming an exited agent, or verifying a new harness adapter.
 - `stuck-subagent-recovery` - load after a stale wake, looping pane, repeated confusion, an answered-by-brief question, an unresponsive subagent, or a failed steer.
 - `secondary-subagent-provisioning` - load before creating, seeding, validating, recovering, handing backlog to, or retiring a secondary-subagent home, and before editing `data/secondary_subagents.md`.

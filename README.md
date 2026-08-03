@@ -57,14 +57,14 @@ git clone https://github.com/jeremiahoclark/agent-os
 cd agent-os
 
 # Option A: use the engine checkout itself as the home
-claude   # SETUP_REQUIRED → /setup on first launch
+claude   # first activation asks onboarding questions automatically
 
 # Option B: create a separate personal home (vault-friendly)
 bin/aos-init-home.sh ~/agentOS-home
 cd ~/agentOS-home && claude
 ```
 
-On first launch, maestro runs setup: your name, how to address you, where projects live, which repos to add, and any secondary-subagents you want. After that it just works from saved settings.
+On first activation, maestro starts onboarding on its own: your name, how to address you, where projects live, which repos to add, and any secondary-subagents you want. No slash command. After that it just works from saved settings.
 
 Then talk:
 
@@ -114,11 +114,11 @@ Outside tmux, subagents land in a detached `agent-os` session you can attach to.
 
 | Skill | What it does |
 | --- | --- |
-| `/setup` | First-run or re-run owner/projects/secondary-subagent setup |
 | `/afk` | Away-mode supervision: self-handle routine wakes, batch owner-relevant escalations |
 | `/update-agentos` | Fast-forward self-update for maestro and secondary-subagents |
 
-Agent-only reference skills live under `.agents/skills/`.
+First-run onboarding is automatic (agent-only `setup` skill), not a slash command.
+Other agent-only reference skills live under `.agents/skills/`.
 
 ## Documentation
 

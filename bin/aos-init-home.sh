@@ -63,5 +63,5 @@ initialized AgentOS home: $HOME_PATH
 
 Next:
   cd $(printf '%q' "$HOME_PATH")
-  claude   # or your harness; /setup will run on first session
+  claude   # or your harness; first activation starts onboarding automatically
 EOF

@@ -11,4 +11,4 @@ cd ~/agentOS-home
 claude   # or codex / opencode / pi
 ```
 
-On first launch, maestro runs `/setup`: who you are, where projects live, which repos to add, and any secondary-subagents. Then it deletes `config/setup-pending` and will not re-ask.
+On first activation, maestro starts onboarding automatically: who you are, where projects live, which repos to add, and any secondary-subagents. Then it deletes `config/setup-pending` and will not re-ask.

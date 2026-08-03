@@ -1,3 +1,3 @@
 # Fleet registry
 
-- my-app [direct-PR] - Example app (added during /setup)
+- my-app [direct-PR] - Example app (added during first-run setup)
