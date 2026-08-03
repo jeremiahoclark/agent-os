@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# aos-subagent-state.sh - deterministic read of a crew's CURRENT state.
+# aos-subagent-state.sh - deterministic read of a subagent's CURRENT state.
 #
 # Why this exists: state/<id>.status is an append-only, best-effort EVENT LOG.
-# Crews append only wake-worthy transitions (done/needs-decision/blocked/failed)
+# Subagents append only wake-worthy transitions (done/needs-decision/blocked/failed)
 # and nothing when they silently resume, so `tail -1` of that log reports the
 # last EVENT, not the current STATE. After maestro resolves a needs-decision
-# or blocked and the crew resumes (responds to the gate, the pipeline fixes, it
+# or blocked and the subagent resumes (responds to the gate, the pipeline fixes, it
 # re-validates), the log's last line stays stale. This helper never infers the
 # current state from a tail of the log: it reads the authoritative source (a
-# no-mistakes run-step attributed to this crew's branch, else the pane
+# no-mistakes run-step attributed to this subagent's branch, else the pane
 # busy-signature) and reconciles the possibly-stale log against it.
 #
 # The determinism lives entirely here - only run-step / pane / log reads plus
@@ -19,7 +19,7 @@
 #
 # Logic, in order:
 #   1. Resolve worktree + window + kind from state/<id>.meta.
-#   2. Matching no-mistakes run for this crew's branch, active or terminal?
+#   2. Matching no-mistakes run for this subagent's branch, active or terminal?
 #      The run-step is AUTHORITATIVE: running/fixing -> working, ci -> working,
 #      awaiting_approval/fix_review -> parked (with gate findings), terminal
 #      passed/checks-passed -> done, failed/cancelled -> failed.
@@ -27,10 +27,10 @@
 #      the run-step shows the run moved on, the log is deterministically stale and
 #      is flagged superseded. A genuinely parked run plus a needs-decision log
 #      agree, and are reported as parked.
-#   4. No run for this crew (pre-validation, or kind=scout): fall back to the
+#   4. No run for this subagent (pre-validation, or kind=scout): fall back to the
 #      pane busy-signature (aos-tmux-lib.sh) + the status log's last line.
 #   5. Missing meta or torn-down worktree: report unknown · none. If no run is
-#      attributed to this crew, a dead window also reports unknown · none rather
+#      attributed to this subagent, a dead window also reports unknown · none rather
 #      than trusting a stale status log.
 #
 # Read-only and side-effect free. Always exits 0 on a successful read regardless
@@ -116,7 +116,7 @@ LOG_VERB=$(log_verb_of "$LOG_LINE")
 
 # pane_readable is consulted ONLY in the no-run fallback below. The run-step path
 # stays authoritative regardless of pane liveness - judge by the run-step, not the
-# shell - so a finished crew whose window has closed still reports its run-step
+# shell - so a finished subagent whose window has closed still reports its run-step
 # state (e.g. done) instead of being masked as unknown.
 pane_readable() {  # <target>
   tmux display-message -p -t "$1" '#{pane_id}' >/dev/null 2>&1
@@ -249,8 +249,8 @@ nm_run_id_for_branch() {  # <branch> <list-output>
   done <<< "$list" | { IFS= read -r found || true; printf '%s' "$found"; }
 }
 
-# CREW_BRANCH is empty at detached HEAD (a just-spawned crew, or a scout's
-# scratch worktree); with no branch there is no run to attribute to this crew.
+# CREW_BRANCH is empty at detached HEAD (a just-spawned subagent, or a scout's
+# scratch worktree); with no branch there is no run to attribute to this subagent.
 CREW_BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
 
 HAVE_RUN=0
@@ -343,10 +343,10 @@ if [ "$HAVE_RUN" = 1 ]; then
   emit "$RUN_STATE" run-step "$RUN_DETAIL"
 fi
 
-# --- fallback: no run attributed to this crew ------------------------------
-# The run-step path above already handled any crew with a run, regardless of pane
-# liveness, so a finished-but-pane-closed crew never reaches here. Down here there
-# is no run to consult, so a dead/unreadable window means the crew is gone: report
+# --- fallback: no run attributed to this subagent --------------------------
+# The run-step path above already handled any subagent with a run, regardless of pane
+# liveness, so a finished-but-pane-closed subagent never reaches here. Down here there
+# is no run to consult, so a dead/unreadable window means the subagent is gone: report
 # unknown rather than trusting a possibly-stale status log as the current state.
 [ -n "$WIN" ] || emit unknown none "no window recorded"
 pane_readable "$WIN" || emit unknown none "window gone: $WIN"

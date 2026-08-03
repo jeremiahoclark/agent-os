@@ -9,15 +9,15 @@ maestro's full operating manual for the orchestrator agent itself is [`AGENTS.md
 ## Event-driven supervision
 
 A zero-token bash watcher (`bin/aos-watch.sh`) sleeps on the fleet, classifies detected wakes in bash, and wakes maestro only when something is actionable.
-Actionable wakes include owner-relevant status signals, no-verb signals whose crew is not provably working, check-script output such as PR merge polling or an X mention, terminal stale panes, non-terminal stale panes whose crew is not provably working, provably-working non-terminal stale panes that persist past `AOS_STALE_ESCALATE_SECS`, and heartbeat backstop hits.
+Actionable wakes include owner-relevant status signals, no-verb signals whose subagent is not provably working, check-script output such as PR merge polling or an X mention, terminal stale panes, non-terminal stale panes whose subagent is not provably working, provably-working non-terminal stale panes that persist past `AOS_STALE_ESCALATE_SECS`, and heartbeat backstop hits.
 Those actionable wakes are written to a durable local queue (`state/.wake-queue`) before detector state advances, so a missed process exit can be recovered by draining the queue.
-No-verb wakes, such as `working:` notes, bare turn-ended signals, and fresh non-terminal stale panes, are benign only when `bin/aos-subagent-state.sh` reports positive evidence that the crew is still working: an actively running no-mistakes step for that crew's branch or a pane busy signature.
+No-verb wakes, such as `working:` notes, bare turn-ended signals, and fresh non-terminal stale panes, are benign only when `bin/aos-subagent-state.sh` reports positive evidence that the subagent is still working: an actively running no-mistakes step for that subagent's branch or a pane busy signature.
 No-change heartbeats are also benign.
 Absorbed wakes advance their suppression markers, log to `state/.watch-triage.log`, and keep the watcher blocking without a queue record or LLM turn.
 After each drain, `aos-wake-drain.sh` runs the same liveness guard as the supervision scripts, so a lapsed watcher chain surfaces even on a turn that only drains and handles queued wakes.
-Routine watcher polling, re-arm no-ops, elapsed waiting time, and absorbed benign wakes stay silent; an idle crew costs you nothing.
-Crew status files are append-only wake-event logs, not current-state fields.
-`bin/aos-subagent-state.sh <id>` is the cheap current-state read for an actionable heartbeat review: it attributes the matching no-mistakes run, active or terminal, to the crew's own branch and keeps that run-step authoritative even if the pane has closed.
+Routine watcher polling, re-arm no-ops, elapsed waiting time, and absorbed benign wakes stay silent; an idle subagent costs you nothing.
+Subagent status files are append-only wake-event logs, not current-state fields.
+`bin/aos-subagent-state.sh <id>` is the cheap current-state read for an actionable heartbeat review: it attributes the matching no-mistakes run, active or terminal, to the subagent's own branch and keeps that run-step authoritative even if the pane has closed.
 Only when no matching run exists does it fall back to the pane busy-signature and then the status log; a dead pane without a run reports unknown instead of trusting a stale log.
 Optional X mode rides the same check path: bootstrap drops a local `state/x-watch.check.sh` shim only after the user opts in with `AOSX_PAIRING_TOKEN`, and non-X homes keep the default watcher behavior.
 
@@ -87,8 +87,9 @@ That content check lets a squash-merged PR whose head branch was deleted tear do
 
 ## Optional X mode
 
-X mode is opt-in presence for the shared `@mymaestro` bot.
+X mode is an optional X relay integration.
 A user enables it by putting `AOSX_PAIRING_TOKEN` in the maestro home's gitignored `.env`; `AOSX_RELAY_URL` is optional and defaults to `https://mymaestro.io`.
+That hostname remains the default for compatibility with the optional upstream X relay connector.
 That token is standing authorization for maestro to answer public mentions and act autonomously on normal reversible mention requests.
 Destructive, irreversible, or security-sensitive asks are escalated for trusted-channel confirmation instead of being executed from a public mention.
 The relay uses owner-only routing: a mention delivered to a home is from that home's owner, while parent-thread context may still include other public accounts.

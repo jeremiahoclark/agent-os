@@ -20,9 +20,9 @@ Each file also starts with a short header comment.
 | `aos-review-diff.sh`      | Review a subagent branch against the authoritative base, with optional `--stat` output                              |
 | `aos-marker-lib.sh`       | Shared from-maestro request marker and detector sourced by `aos-send.sh`, `aos-brief.sh`, and tests                 |
 | `aos-watch-arm.sh`        | Verified per-home watcher re-arm; reports `started`, `healthy`, or `FAILED`; `--restart` relaunches only this home's watcher |
-| `aos-watch.sh`            | Singleton-safe always-on watcher; absorbs no-verb signal and stale wakes only when the crew is provably working, queues and exits for actionable wakes, and reverts to daemon-owned one-shot behavior while `state/.afk` exists |
+| `aos-watch.sh`            | Singleton-safe always-on watcher; absorbs no-verb signal and stale wakes only when the subagent is provably working, queues and exits for actionable wakes, and reverts to daemon-owned one-shot behavior while `state/.afk` exists |
 | `aos-supervise-daemon.sh` | Presence-gated sub-supervisor for walk-away (`/afk`) supervision: wraps `aos-watch.sh`, uses the shared wake classifier, self-handles routine wakes in bash, and escalates only owner-relevant events as one verified, batched, single-line digest prefixed with a sentinel marker |
-| `aos-subagent-state.sh`       | Print one stable current-state line for a crew by reconciling its matching no-mistakes run-step, even when the pane has closed, with pane and status-log fallback |
+| `aos-subagent-state.sh`       | Print one stable current-state line for a subagent by reconciling its matching no-mistakes run-step, even when the pane has closed, with pane and status-log fallback |
 | `aos-tangle-lib.sh`       | Shared default-branch resolution and primary-checkout tangle classification sourced by bootstrap and guard         |
 | `aos-ff-lib.sh`           | Shared guarded fast-forward helper for `/update-agentos` origin pulls and no-fetch local secondary-subagent syncs         |
 | `aos-tasks-axi-lib.sh`    | Shared `tasks-axi` compatibility probe sourced by bootstrap and teardown                                            |

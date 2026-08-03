@@ -87,4 +87,4 @@ tmp=$(mktemp -d) && printf 'done: smoke\n' > "$tmp/smoke.status" && AOS_STATE_OV
 
 ## Questions
 
-Open an issue, or talk to me on [Discord](https://discord.gg/Wsy2NpnZDu).
+Open an issue on GitHub.

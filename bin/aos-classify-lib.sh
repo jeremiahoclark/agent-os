@@ -15,7 +15,7 @@
 # The one exception is the "provably working" predicate (subagent_is_provably_working
 # and its signal-path wrapper). It is NOT a pure status-file read: it reuses
 # bin/aos-subagent-state.sh, which may make a bounded no-mistakes call, to decide
-# whether a crew that just stopped its turn shows positive evidence it is still
+# whether a subagent that just stopped its turn shows positive evidence it is still
 # working. Callers run it ONLY on the no-verb (turn-end / non-terminal stale)
 # path, never on every wake, so the per-wake triage stays cheap.
 
@@ -24,7 +24,7 @@
 # bin/ script (which sets its own SCRIPT_DIR) or directly by a test.
 _AOS_CLASSIFY_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || _AOS_CLASSIFY_LIB_DIR="."
 
-# The crew current-state reader used for the "provably working" decision.
+# The subagent current-state reader used for the "provably working" decision.
 # Overridable so tests can stub the run-step/pane verdict without a real worktree
 # or no-mistakes install; absent, it points at the real sibling script.
 AOS_SUBAGENT_STATE_BIN="${AOS_SUBAGENT_STATE_BIN:-$_AOS_CLASSIFY_LIB_DIR/aos-subagent-state.sh}"
@@ -60,7 +60,7 @@ window_to_task() {
 # owner-relevant last line; 1 otherwise. Pass the space-separated file list that
 # follows the "signal:" prefix. Non-.status arguments (e.g. .turn-ended markers,
 # which never carry a verb) are skipped. A 1 here is NOT "benign" on its own: a
-# no-verb signal (a bare turn-end, a working: note) is only benign when the crew is
+# no-verb signal (a bare turn-end, a working: note) is only benign when the subagent is
 # also provably working (signal_crew_provably_working below); otherwise it surfaces.
 signal_reason_is_actionable() {  # <file> ...
   local f last
@@ -74,22 +74,22 @@ signal_reason_is_actionable() {  # <file> ...
   return 1
 }
 
-# 0 if crew <id> shows POSITIVE evidence it is still working; 1 otherwise. This is
+# 0 if subagent <id> shows POSITIVE evidence it is still working; 1 otherwise. This is
 # the "provably working" predicate at the heart of absorb-only-when-provably-working:
 # a no-verb turn-end or non-terminal stale wake is absorbed ONLY when this returns
-# 0, and SURFACED otherwise (the crew may be done, waiting on a decision, or wedged).
+# 0, and SURFACED otherwise (the subagent may be done, waiting on a decision, or wedged).
 #
 # It reuses bin/aos-subagent-state.sh rather than duplicating its run-step logic, and
-# treats the crew as provably working in exactly two cases, both read straight from
+# treats the subagent as provably working in exactly two cases, both read straight from
 # that helper's one canonical line ("state: <s> · source: <src> · <detail>"):
-#   (a) state working from source run-step - the crew's no-mistakes run for its
+#   (a) state working from source run-step - the subagent's no-mistakes run for its
 #       branch is in an actively-running step (running/fixing/ci), NOT terminal,
 #       parked, passed, or failed; OR
 #   (b) state working from source pane     - the pane shows the harness busy
 #       signature.
 # Everything else - a terminal/parked/failed run, an idle pane that fell back to a
 # stale "working:" status-log line (source status-log), a torn-down or unknown
-# crew, or an unreadable verdict - is NOT provably working, so the wake surfaces.
+# subagent, or an unreadable verdict - is NOT provably working, so the wake surfaces.
 # NOT a pure read: aos-subagent-state.sh may make a bounded no-mistakes call, so this
 # runs only on the no-verb path. AOS_SUBAGENT_STATE_BIN lets tests stub the verdict.
 subagent_is_provably_working() {  # <id>

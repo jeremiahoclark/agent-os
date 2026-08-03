@@ -3,7 +3,7 @@
 # its isolated maestro home.
 # Usage: aos-spawn.sh <task-id> <project-dir> [harness|launch-command] [--scout]
 #        aos-spawn.sh <task-id> [<maestro-home>] [harness|launch-command] --secondary_subagent
-#   With no harness arg, the harness comes from aos-harness.sh crew (config/subagent-harness,
+#   With no harness arg, the harness comes from aos-harness.sh subagent (config/subagent-harness,
 #   falling back to maestro's own harness). A bare adapter name (claude|codex|
 #   opencode|pi) overrides it for this spawn. A non-flag string containing whitespace
 #   is treated as a RAW launch command - the escape hatch for verifying new adapters.
@@ -153,7 +153,7 @@ case "$ARG3" in
     done
     ;;
   '')
-    HARNESS=$("$AOS_ROOT/bin/aos-harness.sh" crew)
+    HARNESS=$("$AOS_ROOT/bin/aos-harness.sh" subagent)
     LAUNCH=$(launch_template "$HARNESS" "$KIND") || { echo "error: no launch template for harness '$HARNESS' (from config/subagent-harness or detection); pass a raw launch command to use an unverified adapter" >&2; exit 1; }
     ;;
   *)

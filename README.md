@@ -8,127 +8,136 @@
   /></a>
 </p>
 
-<h3 align="center">Talk to one agent. Delegate to subagents.</h3>
+<h3 align="center">Talk to one agent. Let it run the rest.</h3>
 
-<p align="center">
-  <img alt="AgentOS - talk to one agent, delegate to subagents" src="assets/banner.png" width="100%" />
-</p>
+## The problem
 
-## What it is
+We are the bottleneck.
 
-You can run one coding agent easily.
-But the moment you want three project tasks done in parallel - fixes, investigations, plans, audits - you become a tab-juggler: babysitting sessions, copy-pasting context between repos, forgetting which terminal had the failing test.
+One coding agent is easy to manage. Add a few more and we spend our time moving context between tabs, checking terminals, answering repeated questions, and remembering what each agent is doing.
 
-AgentOS flips the model.
-You talk to a single orchestrator - **maestro** - and it runs the work for you: spawning autonomous **subagents** in tmux windows, giving each a clean git worktree, supervising them to completion, and handing you finished PRs, approved local merges, or standalone investigation reports.
-For larger fleets, you can opt in to persistent **secondary-subagents**: domain supervisors that are still ordinary direct reports, but run from their own isolated AgentOS homes.
+AgentOS decreases that bottleneck by putting one agent in charge of the others. You talk to **maestro**. Maestro routes the work, supervises the agents, and brings decisions back to you.
 
-There is no app to install; the orchestrator is `AGENTS.md`, bundled skills, and helper scripts that any terminal coding agent can follow.
+More agents can work at once. You keep one conversation.
 
-This is not an agent harness. This is not a single skill. This is not a CLI.
-This is a directory that turns any agent into your maestro, and you the owner.
+## How it works
 
-AgentOS is inspired by [Kun Chen's firstmate](https://github.com/kunchenguid/firstmate) agent framework, with a stronger focus on personal home/memory setup and owner-driven onboarding.
+Open a supported coding agent harness inside this directory. That agent becomes maestro.
 
-## Features
+Maestro can:
 
-- **One liaison** - you talk only to maestro; it dispatches, supervises, escalates only real decisions, and reports plain outcomes.
-- **Visible subagents** - every subagent works in its own tmux window you can watch or type into; maestro reconciles.
-- **Disposable worktrees** - each task runs in a clean [treehouse](https://github.com/kunchenguid/treehouse) git worktree, so parallel work on one repo never collides.
-- **Two task shapes** - ship tasks deliver a change; scout tasks investigate, plan, reproduce, or audit and leave a report.
-- **Explicit project modes** - each project ships via `no-mistakes`, `direct-PR`, or `local-only`, with an optional `+yolo` autonomy flag.
-- **Optional secondary-subagents** - persistent domain supervisors in isolated homes with their own `AOS_HOME`, state, projects, and session lock.
-- **Event-driven, zero-token supervision** - a bash watcher sleeps on the fleet and wakes maestro only when something needs you.
-- **First-run setup** - on a fresh home, maestro asks who you are, which projects to manage and where they live, and whether to create secondary-subagents; then it saves settings and never re-asks.
-- **Optional X mode** - opt in with one local `.env` token so maestro can answer public mentions through the same lifecycle as chat requests.
-- **Guarded by construction** - maestro is read-only over your projects outside guarded clone refreshes, safe branch pruning, and approved `local-only` fast-forward merges; subagents make every project change behind your merge approval.
-- **Restart-proof** - all state lives on disk and in tmux; kill the session anytime and the next one reconciles and carries on.
+- turn a request into separate tasks
+- spawn **subagents** in tmux windows
+- give each subagent a clean git worktree
+- supervise work through a PR, local merge, or research report
+- bring you the decisions that need your judgment
 
-Full detail on every feature lives in [docs/architecture.md](docs/architecture.md).
+Larger setups can add **secondary-subagents**. These are persistent domain agents with their own home, backlog, and project list. They use the same lifecycle and stay available for future work.
 
-## Quick Start
+AgentOS runs from a directory of instructions, skills, and bash helpers. Any verified terminal agent can follow it.
 
-**Requirements:** a verified agent harness (claude, codex, opencode, or pi), git with GitHub auth, and tmux for subagent windows.
-Maestro detects and offers to install everything else.
+## Quick start
+
+You need a coding agent harness, `git`, GitHub auth, and `tmux`.
 
 ```sh
 gh auth login
 git clone https://github.com/jeremiahoclark/agent-os
 cd agent-os
-
-# Option A: use the engine checkout itself as the home
-claude   # first activation asks onboarding questions automatically
-
-# Option B: create a separate personal home (vault-friendly)
-bin/aos-init-home.sh ~/agentOS-home
-cd ~/agentOS-home && claude
+claude # or codex / opencode / pi
 ```
 
-On first activation, maestro starts onboarding on its own: your name, how to address you, where projects live, which repos to add, and any secondary-subagents you want. No slash command. After that it just works from saved settings.
+The clone is your AgentOS home. Maestro detects supporting tools such as treehouse and no-mistakes, then asks before installing anything.
 
-Then talk:
+### First run
+
+Setup starts automatically when you open the agent in this directory. There is no slash command.
+
+Maestro asks how to address you, where your projects live, which repos to manage, and whether you want secondary-subagents. It saves those answers for later sessions.
+
+Then talk to it normally:
+
+```text
+Look at my GitHub project xyz. Fix the flaky login test and add dark mode.
+```
+
+Maestro can clone the repo with your consent, split the request across subagents, and return with the result:
+
+```text
+PR ready for review: https://github.com/you/xyz/pull/42
+Fix flaky login test. Risk: low. CI green.
+```
+
+You approve merges unless you explicitly give a project more autonomy.
+
+### Optional separate home
+
+Use `aos-init-home` when you want your notes and local state separated from the AgentOS repository:
 
 ```sh
-> look at my github project xyz, then fix the flaky login test and add dark mode
-
-# maestro checks its toolchain (asking your consent before installing anything),
-# clones the project under projects/, and spawns two subagents in tmux windows
-# aos-fix-login-k3 and aos-dark-mode-p7.
-# Minutes later:
-
-  PR ready for review: https://github.com/you/xyz/pull/42
-  (fix flaky login test - risk: low - CI green)
-
-> alright merge it
+bin/aos-init-home.sh ~/agentOS-home
+cd ~/agentOS-home
+claude
 ```
 
-Run it inside tmux for the best experience: launching your harness from inside tmux puts every subagent window in your own session.
-Outside tmux, subagents land in a detached `agent-os` session you can attach to.
+### tmux tip
 
-## How It Works
+Launch your coding agent inside tmux to see each subagent window in the same session. If you launch outside tmux, AgentOS creates a detached `agent-os` session that you can attach to later.
 
-```
-            you (the owner)
-                  │  chat: requests, decisions, "merge it"
-                  ▼
- ┌─────────────────────────────────────┐
- │ maestro            (this repo)      │
- │ reads projects/ + maestro routes    │
- │ writes guarded backlog/briefs/state │
- └──┬──────────────┬───────────────┬───┘
-    │ tmux send-keys / status files │
-    ▼              ▼               ▼
- ┌────────┐   ┌────────┐      ┌────────┐
- │aos-task1│   │aos-task2│  ... │aos-taskN│   tmux windows you can watch
- │subagent│   │subagent│      │subagent│   one autonomous agent each
- └───┬────┘   └───┬────┘      └───┬────┘
-     ▼            ▼               ▼
-  treehouse worktree or isolated secondary-subagent home
-     │
-     ├─ ship: project mode ► PR/local merge ► teardown
-     │
-     └─ scout: report at data/<id>/report.md ► relay findings ► teardown
+## How the pieces fit
+
+```text
+              you
+               │
+               ▼
+        ┌─────────────┐
+        │   maestro   │
+        └──┬───────┬──┘
+           │       │
+           ▼       ▼
+      subagent   subagent
+           │       │
+           ▼       ▼
+       worktree  worktree
+           │       │
+           └───┬───┘
+               ▼
+      PR, local merge, or report
 ```
 
-## Built-in skills
+The operating model is simple:
+
+- **Ship or research.** A ship task changes code. A research task leaves a report.
+- **Choose a delivery mode.** Projects can use `no-mistakes`, `direct-PR`, or `local-only`.
+- **Keep maestro read-only.** Subagents edit projects. You approve merges.
+- **Persist the work.** State lives on disk and in tmux, so a later session can pick it up.
+- **Wake on decisions.** A bash watcher waits quietly and wakes maestro when something needs attention.
+
+See [the architecture docs](docs/architecture.md) for the full lifecycle.
+
+## Useful skills
 
 | Skill | What it does |
 | --- | --- |
-| `/afk` | Away-mode supervision: self-handle routine wakes, batch owner-relevant escalations |
-| `/update-agentos` | Fast-forward self-update for maestro and secondary-subagents |
+| `/afk` | Handles routine updates while you step away, then gives you one useful digest. |
+| `/update-agentos` | Fast-forwards AgentOS and your secondary-subagent homes to the latest `main`. |
 
-First-run onboarding is automatic (agent-only `setup` skill), not a slash command.
-Other agent-only reference skills live under `.agents/skills/`.
+First-run setup is automatic. Ask maestro in plain language when you want to reconfigure it.
 
-## Documentation
+## Docs
 
-- [docs/architecture.md](docs/architecture.md)
-- [docs/configuration.md](docs/configuration.md)
-- [docs/scripts.md](docs/scripts.md)
-- [`AGENTS.md`](AGENTS.md) - maestro's operating manual
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [Architecture](docs/architecture.md)
+- [Configuration](docs/configuration.md)
+- [Scripts](docs/scripts.md)
+- [`AGENTS.md`](AGENTS.md), maestro’s full job description
+- [Contributing](CONTRIBUTING.md)
+
+## Credits
+
+AgentOS started from [Kun Chen’s firstmate](https://github.com/kunchenguid/firstmate).
+
+Modifications by Jeremiah Clark.
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
-Original firstmate framework by Kun Chen; AgentOS modifications by Jeremiah Clark.
+MIT. See [LICENSE](LICENSE).

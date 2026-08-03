@@ -62,12 +62,13 @@ It emits `SECONDARY_SUBAGENT_SYNC:` only when a home was skipped for an actionab
 
 ## X mode (.env)
 
-X mode lets a maestro instance answer public `@mymaestro` mentions and act on normal reversible mention requests through maestro's normal lifecycle.
+X mode lets a maestro instance answer public mentions delivered by the optional X relay and act on normal reversible mention requests through maestro's normal lifecycle.
 It is off unless the maestro home's gitignored `.env` contains a non-empty `AOSX_PAIRING_TOKEN`.
 The pairing token both identifies the relay tenant and records opt-in consent for autonomous public replies and eligible lifecycle actions.
 Destructive, irreversible, or security-sensitive asks are flagged for trusted-channel confirmation instead of being executed from a public mention.
-The relay uses owner-only routing: a mention delivered to a home is from that home's owner/owner, while parent-thread context may still include other public accounts.
+The relay uses owner-only routing: a mention delivered to a home is from that home's owner, while parent-thread context may still include other public accounts.
 `AOSX_RELAY_URL` is optional and defaults to `https://mymaestro.io`, mainly for developers pointing at a local relay.
+That hostname remains the default for compatibility with the optional upstream X relay connector.
 For direct client invocations, environment values override `.env`; bootstrap activation still keys off `.env` presence so watcher artifacts are explicit local opt-in state.
 `AOSX_ENV_FILE` can point direct poll/reply client invocations at another `.env`-style file, but it does not change bootstrap activation.
 

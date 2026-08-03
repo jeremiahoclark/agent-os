@@ -154,7 +154,7 @@ If the owner names a different subagent harness at bootstrap or later, write it 
 Subagents default to the same harness you are running on.
 The owner may override this at any time, typically at bootstrap: record the choice in `config/subagent-harness` (a single adapter name; absent or `default` means mirror your own harness).
 The recorded harness is used for every dispatch until changed; a per-task instruction from the owner ("run this one on codex") overrides it for that dispatch only.
-Resolve `default` with `bin/aos-harness.sh`; resolve the active subagent harness with `bin/aos-harness.sh crew`.
+Resolve `default` with `bin/aos-harness.sh`; resolve the active subagent harness with `bin/aos-harness.sh subagent`.
 
 Each adapter splits into mechanics and knowledge.
 The mechanics (launch command, autonomy flag, turn-end hook) live in `bin/aos-spawn.sh`; the knowledge you need while supervising (busy signature, exit, interrupt, dialogs, quirks, skill invocation, resume) lives in the agent-only `harness-adapters` skill.
@@ -343,7 +343,7 @@ bin/aos-spawn.sh <id1>=projects/<repo1> <id2>=projects/<repo2> [--scout]   # bat
 Dispatch several tasks in one call by passing `id=repo` pairs instead of a single `<id> <project>`; each pair is spawned through the same single-task path, a shared `--scout` applies to all, and the looping happens inside the script so you never hand-write a multi-task shell loop.
 If one pair fails, the rest still run and the batch exits non-zero.
 
-The script resolves the harness (`aos-harness.sh crew`), owns the verified launch templates, resolves the project's delivery mode (`aos-project-mode.sh`) for ship/scout tasks, and records `harness=`, `kind=`, `mode=`, and `yolo=` in the task's meta; a non-flag third argument containing whitespace is treated as a raw launch command (only for verifying new adapters).
+The script resolves the harness (`aos-harness.sh subagent`), owns the verified launch templates, resolves the project's delivery mode (`aos-project-mode.sh`) for ship/scout tasks, and records `harness=`, `kind=`, `mode=`, and `yolo=` in the task's meta; a non-flag third argument containing whitespace is treated as a raw launch command (only for verifying new adapters).
 For `kind=secondary_subagent`, the same script launches in the registered or explicit maestro home instead of running `treehouse get` for a project, records `home=` and `projects=`, and uses the charter brief as the launch prompt.
 
 For ship and scout tasks, the script creates the window (in your current tmux session, or a dedicated `maestro` session when you are outside tmux), runs `treehouse get`, waits for the worktree subshell, asserts the resolved worktree is a genuine isolated worktree distinct from the primary checkout (aborting the spawn otherwise, to prevent the worktree tangle of section 8), installs the turn-end hook, records `state/<id>.meta`, and launches the agent with the brief.
@@ -379,7 +379,7 @@ Pooled clones keep their local default refs frozen at clone time and can lag `or
 
 ### Validate
 
-For `no-mistakes`-mode ship tasks, when a subagent's status says `done`, trigger validation using the crew's harness from `state/<id>.meta`.
+For `no-mistakes`-mode ship tasks, when a subagent's status says `done`, trigger validation using that subagent's harness from `state/<id>.meta`.
 Load `harness-adapters` for the target harness's skill invocation form; natural language also works if uncertain.
 
 The subagent drives the no-mistakes pipeline (review, test, document, lint, push, PR, CI) itself.
@@ -463,7 +463,7 @@ A `heartbeat` with no owner-relevant change is likewise absorbed.
 Absorbed wakes are advanced past their suppression marker and logged to `state/.watch-triage.log` while the watcher keeps blocking - no queue entry, no exit, no LLM turn.
 It exits with one reason line on an *actionable* wake: a `signal` carrying an owner-relevant verb (`needs-decision:`/`blocked:`/`failed:`/`done:`/`PR ready`/`checks green`/`ready in branch`/`merged`); a no-verb `signal` whose subagent is NOT provably working (it stopped its turn with no running pipeline and no busy pane, so it may be done, waiting on a decision, or wedged); any `check`; a terminal `stale`; a non-terminal `stale` whose subagent is not provably working (surfaced at once, never left to wait out the timer); a provably-working non-terminal `stale` that stays idle past the wedge threshold (`AOS_STALE_ESCALATE_SECS`, default 240s); or the heartbeat fleet-scan's fail-safe backstop catching an owner-relevant status the per-wake path missed.
 Only an actionable wake is written to the durable queue at `state/.wake-queue` - before advancing suppression markers such as `.seen-*`, `.stale-*`, `.last-check`, or `.last-heartbeat` - and only an actionable wake ends the background task, so you re-arm exactly once per actionable event instead of once per wake.
-That is what eliminates the quiet-stretch churn without swallowing a finish: during a long crew validation the run is actively running, so the subagent's `turn-ended`/`working:`/non-terminal-stale wakes (and no-change heartbeats) are absorbed in bash, the liveness beacon (`state/.last-watcher-beat`) stays fresh the whole time so `aos-guard.sh` never false-alarms, and your LLM is woken only when something genuinely needs you - including the moment that subagent stops with no running pipeline, which now surfaces immediately.
+That is what eliminates the quiet-stretch churn without swallowing a finish: during a long subagent validation the run is actively running, so the subagent's `turn-ended`/`working:`/non-terminal-stale wakes (and no-change heartbeats) are absorbed in bash, the liveness beacon (`state/.last-watcher-beat`) stays fresh the whole time so `aos-guard.sh` never false-alarms, and your LLM is woken only when something genuinely needs you - including the moment that subagent stops with no running pipeline, which now surfaces immediately.
 The classifier lives in `bin/aos-classify-lib.sh` and is shared: the owner-relevant verb set and status-scan primitives back both this always-on watcher and the away-mode daemon, so the overlapping policy cannot drift; the provably-working predicate (`subagent_is_provably_working`, reusing `bin/aos-subagent-state.sh`) lives in that same library and runs only on the watcher's no-verb path, never on every wake, so the per-wake triage stays cheap.
 While `state/.afk` exists the daemon owns supervision, so the watcher reverts to one-shot - it surfaces every wake for the daemon to classify (skipping the provably-working read entirely) - and never double-triages; the daemon keeps its own bounded-latency stale backstop for a subagent that stops in away mode.
 At the start of every wake-handling turn and every recovery turn, run `bin/aos-wake-drain.sh` before peeking panes, reading status files beyond the reason line, or starting new work.
@@ -546,7 +546,7 @@ Background that work so watcher wakes can interleave with it and the supervision
 A subagent driving its own `no-mistakes` validation does the opposite: it drives that gate loop synchronously and processes every return, never idle-waiting for its own validation run to advance on its own.
 
 Token discipline: for a subagent's current state prefer `bin/aos-subagent-state.sh <id>`, which looks for a branch-matched run-step before checking pane liveness, then falls back to the pane and log in that cheap-first order and treats the status log's last line as a wake event rather than the current state; default peeks to 40 lines; never stream a pane repeatedly through yourself; batch what you tell the owner.
-The context-% shown in a peek is not actionable as crew health; ignore it and intervene only on real signals (`signal`, `stale`, `needs-decision`, `blocked`), looping or confusion in the pane, or a question the brief already answers.
+The context-% shown in a peek is not actionable as subagent health; ignore it and intervene only on real signals (`signal`, `stale`, `needs-decision`, `blocked`), looping or confusion in the pane, or a question the brief already answers.
 Silence is the correct state while a healthy background watcher is waiting.
 
 ### Away-mode stub
@@ -676,7 +676,7 @@ These skills are not owner-invocable; they are conditional operating references 
 
 ## 14. X mode
 
-X mode lets a maestro instance answer public mentions of the shared `@mymaestro` bot on X, and act on actionable mention requests, in maestro's own voice, from its live fleet state.
+X mode lets a maestro instance answer public mentions delivered by the optional X relay, act on actionable mention requests, and respond from its live fleet state.
 It ships inside this repo for every user but is **inert until opted in**, so a user who never enables it sees zero behavior change.
 
 **Activation is `.env` presence, not a command.**
@@ -684,6 +684,7 @@ Put one value, `AOSX_PAIRING_TOKEN`, into a `.env` file at this home's root (`.e
 That token is the whole consent, including standing authorization for normal reversible lifecycle actions from mention requests, and the only required config; the relay derives the tenant from it.
 It is not consent for destructive, irreversible, or security-sensitive actions; those still require trusted-channel confirmation first.
 `AOSX_RELAY_URL` is optional and defaults to `https://mymaestro.io`; only a developer pointing at a local relay sets it.
+That hostname remains the default for compatibility with the optional upstream X relay connector.
 
 **Mechanism (purely additive; the watcher backbone is untouched).**
 On the next bootstrap, an `.env` with a non-empty `AOSX_PAIRING_TOKEN` makes bootstrap drop two gitignored, idempotent artifacts: `state/x-watch.check.sh`, a check shim that execs `bin/aos-x-poll.sh`, and `config/x-mode.env`, which exports `AOS_CHECK_INTERVAL=30`.

@@ -3,15 +3,15 @@
 # Classifies supervision wakes in bash. In normal mode it absorbs benign wakes
 # and keeps blocking; it queues and exits only for actionable wakes. The no-verb
 # turn-end / non-terminal-stale path is absorb-only-when-provably-working: a wake
-# is absorbed only when the crew shows POSITIVE evidence it is still working (an
+# is absorbed only when the subagent shows POSITIVE evidence it is still working (an
 # actively-running no-mistakes step, or a busy pane), and surfaced otherwise, so a
-# crew that finishes (or stops and waits) without an owner-relevant status is
+# subagent that finishes (or stops and waits) without an owner-relevant status is
 # never silently swallowed. While state/.afk exists, the daemon owns triage and
 # this watcher queues and exits on every wake. Printed reason lines:
 #   signal: <file>...      status/turn-end signals, surfaced when a listed status
-#                          has an owner-relevant verb OR a no-verb signal's crew
+#                          has an owner-relevant verb OR a no-verb signal's subagent
 #                          is not provably working, unless afk is active
-#   stale: <window>        terminal stale pane, a non-terminal stale whose crew is
+#   stale: <window>        terminal stale pane, a non-terminal stale whose subagent is
 #                          not provably working (surfaced at once), or a provably-
 #                          working stale past the wedge threshold, unless afk active
 #   check: <script>: <out> per-task check output, always actionable
@@ -94,18 +94,18 @@ SIGNAL_GRACE=${AOS_SIGNAL_GRACE:-30}   # seconds to linger after a signal so tra
 # Busy signatures per harness, OR-ed. Extend via env when new adapters are verified.
 # claude/codex: "esc to interrupt"; opencode: "esc interrupt"; pi: "Working..."
 BUSY_REGEX=${AOS_BUSY_REGEX:-'esc (to )?interrupt|Working\.\.\.'}
-# Always-on wake triage: most wakes during a long crew validation are benign (a
+# Always-on wake triage: most wakes during a long subagent validation are benign (a
 # working: note or turn-end while a pipeline runs, a no-change heartbeat). Rather
 # than wake maestro's LLM for each, this watcher classifies every wake in bash
 # and ABSORBS the benign majority - it advances the suppression marker, logs to a
 # debug log, and keeps blocking WITHOUT enqueuing or exiting. The no-verb turn-end
 # / non-terminal-stale path is absorb-only-when-provably-working: such a wake is
-# absorbed ONLY while the crew shows positive evidence it is still working (an
+# absorbed ONLY while the subagent shows positive evidence it is still working (an
 # actively-running no-mistakes step, or a busy pane, via subagent_is_provably_working
-# over aos-subagent-state.sh); a crew that stopped its turn with no running pipeline and
+# over aos-subagent-state.sh); a subagent that stopped its turn with no running pipeline and
 # no busy pane is SURFACED, so a finish reported only through interactive pane menus
 # (no done: status) is never swallowed. An ACTIONABLE wake (an owner-relevant
-# signal, a no-verb signal whose crew is not provably working, any check, a
+# signal, a no-verb signal whose subagent is not provably working, any check, a
 # terminal stale, a not-provably-working stale, a provably-working stale past the
 # threshold, or anything unknown) is written to the durable queue and exits, which
 # is what wakes the LLM through the background-task completion. The same classifier
@@ -331,13 +331,13 @@ EOF
     # Triage: a signal is ACTIONABLE when any of these holds (cheapest first):
     #   - the away-mode daemon owns triage (afk) and wants every wake;
     #   - any status file carries an owner-relevant verb;
-    #   - or it is a no-verb wake (a bare turn-end, a working: note) whose crew is
-    #     NOT provably working - the crew stopped its turn with no actively-running
+    #   - or it is a no-verb wake (a bare turn-end, a working: note) whose subagent is
+    #     NOT provably working - the subagent stopped its turn with no actively-running
     #     pipeline and no busy pane, so it may be done (even via an interactive menu
     #     that wrote no done: status), waiting on a decision, or wedged. Absorbing
     #     such a turn-end is exactly the swallowed-finish this change guards against.
     # Actionable -> enqueue, advance .seen-* markers, exit. Benign (a no-verb wake
-    # whose crew IS provably working) in always-on mode -> advance the markers so it
+    # whose subagent IS provably working) in always-on mode -> advance the markers so it
     # will not re-fire, log, and keep blocking without enqueuing. The provably-working
     # check is the only costly one (it may run a bounded no-mistakes call), so the ||
     # ordering evaluates it ONLY for a non-afk, no-owner-verb signal.
@@ -410,14 +410,14 @@ EOF
             wake "stale: $w"
           fi
         else
-          # Non-terminal stale: a crew gone quiet without an owner-relevant status.
+          # Non-terminal stale: a subagent gone quiet without an owner-relevant status.
           # Absorb-only-when-provably-working, decided once per distinct stale hash
           # (the costly run-step read runs only on first sight, never every poll):
           #   - provably working: an actively-running pipeline legitimately sits on a
           #     static pane (e.g. waiting on CI), so absorb and start the wedge timer
           #     so a genuinely frozen run still escalates past STALE_ESCALATE_SECS;
           #   - NOT provably working: no running pipeline, idle pane, no busy
-          #     signature - the crew has STOPPED. Surface immediately so maestro
+          #     signature - the subagent has STOPPED. Surface immediately so maestro
           #     peeks (it may be done via an interactive menu that wrote no done:
           #     status, waiting on a decision, or wedged) instead of leaving the
           #     finish to wait out the timer.
@@ -458,7 +458,7 @@ EOF
     else
       printf '%s' "$h" > "$hf"
       echo 0 > "$cf"
-      # Pane content changed: the crew is active again, so reset the escalation timer.
+      # Pane content changed: the subagent is active again, so reset the escalation timer.
       rm -f "$ssf"
     fi
   done < <(recorded_windows)

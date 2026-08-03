@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Detect the agent harness this process tree runs on.
 # Usage: aos-harness.sh         print own harness: claude|codex|opencode|pi|unknown
-#        aos-harness.sh crew    print the effective subagent harness
-#                              (config/subagent-harness; "default" resolves to own)
+#        aos-harness.sh subagent  print the effective subagent harness
+#                                (config/subagent-harness; "default" resolves to own)
+#        aos-harness.sh crew      legacy alias for subagent
 # Detection layers: verified environment markers first, then process ancestry.
 # Record each newly verified env marker here.
 set -u
@@ -43,10 +44,10 @@ detect_own() {
   echo unknown
 }
 
-if [ "${1:-}" = "crew" ]; then
-  crew=
-  [ -f "$CONFIG/subagent-harness" ] && crew=$(tr -d '[:space:]' < "$CONFIG/subagent-harness" || true)
-  if [ -z "$crew" ] || [ "$crew" = "default" ]; then detect_own; else echo "$crew"; fi
+if [ "${1:-}" = "subagent" ] || [ "${1:-}" = "crew" ]; then
+  harness=
+  [ -f "$CONFIG/subagent-harness" ] && harness=$(tr -d '[:space:]' < "$CONFIG/subagent-harness" || true)
+  if [ -z "$harness" ] || [ "$harness" = "default" ]; then detect_own; else echo "$harness"; fi
 else
   detect_own
 fi
